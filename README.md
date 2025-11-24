@@ -1,4 +1,5 @@
 # 🏃 Wilmington Half Marathon Training Tracker
+# wilmington Half training plan
 
 A complete web application for tracking your 13-week half marathon training plan.
 
