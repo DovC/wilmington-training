@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wilmington Half Marathon Training Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .calendar-day {
+            min-height: 120px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
+        }
+        .calendar-day:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-xl p-8 mb-8 text-white">
+            <h1 class="text-4xl font-bold mb-4">🏃 Wilmington Half Marathon Training</h1>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                    <div class="text-sm opacity-90">Race Date</div>
+                    <div class="text-xl font-bold">February 28, 2026</div>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                    <div class="text-sm opacity-90">Goal Time</div>
+                    <div class="text-xl font-bold">Sub 1:50:00</div>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                    <div class="text-sm opacity-90">Goal Pace</div>
+                    <div class="text-xl font-bold">8:20-8:25/mile</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Dashboard - New 3 Column Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+            <!-- LEFT COLUMN: Stats (25% width = 1 col) -->
+            <div class="space-y-4">
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+                    <div class="text-sm mb-2 opacity-90">Workouts Completed</div>
+                    <div id="stat-workouts" class="text-4xl font-bold">0 / 0</div>
+                </div>
+                <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg shadow-lg p-6 text-white">
+                    <div class="text-sm mb-2 opacity-90">Miles Completed</div>
+                    <div id="stat-miles" class="text-4xl font-bold">0</div>
+                </div>
+                <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+                    <div class="text-sm mb-2 opacity-90">Weeks to Race</div>
+                    <div id="stat-weeks" class="text-4xl font-bold">13</div>
+                </div>
+            </div>
+
+            <!-- MIDDLE COLUMN: Pacing Guide (25% width = 1 col) -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">🎯 Target Paces</h3>
+                <div class="space-y-3">
+                    <div class="border-b border-gray-200 pb-3">
+                        <div class="text-xs font-semibold text-gray-500 uppercase">Easy</div>
+                        <div class="text-lg font-bold text-gray-900">9:45-10:30</div>
+                    </div>
+                    <div class="border-b border-gray-200 pb-3">
+                        <div class="text-xs font-semibold text-gray-500 uppercase">Tempo</div>
+                        <div class="text-lg font-bold text-gray-900">8:05-8:15</div>
+                    </div>
+                    <div class="border-b border-gray-200 pb-3">
+                        <div class="text-xs font-semibold text-gray-500 uppercase">800m</div>
+                        <div class="text-lg font-bold text-gray-900">3:00-3:04</div>
+                        <div class="text-xs text-gray-500">(7:30-7:40 pace)</div>
+                    </div>
+                    <div class="border-b border-gray-200 pb-3">
+                        <div class="text-xs font-semibold text-gray-500 uppercase">Race Pace</div>
+                        <div class="text-lg font-bold text-blue-600">8:20-8:25</div>
+                    </div>
+                    <div class="border-b border-gray-200 pb-3">
+                        <div class="text-xs font-semibold text-gray-500 uppercase">Long Run</div>
+                        <div class="text-lg font-bold text-gray-900">9:30-10:00</div>
+                    </div>
+                    <div class="pb-1">
+                        <div class="text-xs font-semibold text-gray-500 uppercase">Strides</div>
+                        <div class="text-lg font-bold text-gray-900">6:15-6:30</div>
+                        <div class="text-xs text-gray-500">(20 sec)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Weekly Mileage Chart (50% width = 2 cols) -->
+            <div class="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">📈 Planned vs Actual</h3>
+                <canvas id="weeklyMileageChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Color Legend -->
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <div class="text-sm font-semibold text-gray-700 mb-3">Color Key:</div>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div class="flex items-center">
+                    <div class="w-6 h-6 rounded bg-yellow-100 border border-gray-300 mr-2"></div>
+                    <span class="text-sm text-gray-700">Rest Day</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-6 h-6 rounded bg-green-50 border border-gray-300 mr-2"></div>
+                    <span class="text-sm text-gray-700">Easy Run</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-6 h-6 rounded bg-pink-100 border border-gray-300 mr-2"></div>
+                    <span class="text-sm text-gray-700">Quality Workout</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-6 h-6 rounded bg-blue-100 border border-gray-300 mr-2"></div>
+                    <span class="text-sm text-gray-700">Long Run</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-6 h-6 rounded bg-green-100 border border-green-500 mr-2"></div>
+                    <span class="text-sm text-gray-700">Completed</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Toggle and Initialize -->
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex space-x-4">
+                <button onclick="changeView('calendar')" id="btn-calendar" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold shadow-lg hover:bg-blue-700 transition">
+                    📅 Calendar View
+                </button>
+                <button onclick="changeView('list')" id="btn-list" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold shadow hover:bg-gray-300 transition">
+                    📋 List View
+                </button>
+            </div>
+            <button onclick="initializePlan()" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold shadow-lg hover:bg-green-700 transition">
+                ⚡ Initialize Training Plan
+            </button>
+        </div>
+
+        <!-- Training Plan Container -->
+        <div id="training-plan-container" class="bg-white rounded-lg shadow-xl p-6">
+            <div class="text-center text-gray-500 py-12">
+                <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p class="text-xl font-semibold">Click "Initialize Training Plan" to begin</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workout Modal -->
+    <div id="workout-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Log Workout</h2>
+                    <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700 text-3xl font-bold">&times;</button>
+                </div>
+                
+                <div id="modal-workout-info" class="bg-blue-50 rounded-lg p-4 mb-6"></div>
+                
+                <form id="workout-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Actual Distance (miles)</label>
+                        <input type="number" id="actual-distance" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., 6.2">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration (minutes)</label>
+                        <input type="number" id="duration" step="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., 52">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Effort Level (1-10)</label>
+                        <input type="range" id="effort" min="1" max="10" value="5" class="w-full" oninput="document.getElementById('effort-value').textContent = this.value">
+                        <div class="text-center text-gray-700 font-semibold mt-2">
+                            <span id="effort-value">5</span> / 10
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                        <textarea id="workout-notes" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="How did it feel? Weather? Any observations..."></textarea>
+                    </div>
+                    
+                    <div class="flex space-x-4 pt-4">
+                        <button type="button" onclick="saveWorkout()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+                            💾 Save Workout
+                        </button>
+                        <button type="button" onclick="closeModal()" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Workout Modal -->
+    <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">✏️ Edit Workout</h2>
+                    <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700 text-3xl font-bold">&times;</button>
+                </div>
+                
+                <div id="edit-workout-info" class="bg-blue-50 rounded-lg p-4 mb-6"></div>
+                
+                <!-- Original Workout (Always Shown) -->
+                <div class="bg-gray-100 rounded-lg p-4 mb-6">
+                    <div class="text-sm font-semibold text-gray-700 mb-2">📋 Original Planned Workout:</div>
+                    <div id="original-workout-display" class="text-gray-900"></div>
+                </div>
+                
+                <form id="edit-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Modified Workout Description</label>
+                        <input type="text" id="modified-workout" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., 6 mi Easy (tired from travel)">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Planned Distance (miles)</label>
+                        <input type="number" id="modified-miles" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="0 for rest day">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Workout Type</label>
+                        <select id="modified-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="easy">Easy Run</option>
+                            <option value="quality">Quality Workout (Tempo/Intervals)</option>
+                            <option value="long">Long Run</option>
+                            <option value="recovery">Recovery Run</option>
+                            <option value="rest">Rest Day</option>
+                            <option value="race">Race/Time Trial</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Change (optional)</label>
+                        <textarea id="modification-reason" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., Traveling, feeling tired, weather, etc."></textarea>
+                    </div>
+                    
+                    <div class="flex space-x-3 pt-4">
+                        <button type="button" onclick="saveWorkoutEdit()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+                            💾 Save Changes
+                        </button>
+                        <button type="button" onclick="revertToOriginal()" class="flex-1 bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition">
+                            ↩️ Revert
+                        </button>
+                        <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let trainingPlan = null;
+        let completedWorkouts = {};
+        let currentView = 'calendar';
+        let currentWorkoutDate = null;
+
+        // Initialize the training plan
+        async function initializePlan() {
+            try {
+                const response = await fetch('/api/get_stats');
+                const stats = await response.json();
+                updateStats(stats);
+                
+                // Load plan data from backend
+                trainingPlan = {{ plan | tojson }};
+                completedWorkouts = {{ workout_data | tojson }};
+                
+                renderView();
+            } catch (error) {
+                console.error('Error initializing plan:', error);
+                alert('Error loading training plan. Please try again.');
+            }
+        }
+
+        // Change view between calendar and list
+        function changeView(view) {
+            currentView = view;
+            
+            document.getElementById('btn-calendar').className = view === 'calendar' ?
+                'px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold shadow-lg hover:bg-blue-700 transition' :
+                'px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold shadow hover:bg-gray-300 transition';
+            
+            document.getElementById('btn-list').className = view === 'list' ?
+                'px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold shadow-lg hover:bg-blue-700 transition' :
+                'px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold shadow hover:bg-gray-300 transition';
+            
+            renderView();
+        }
+
+        // Render current view
+        function renderView() {
+            if (!trainingPlan) return;
+            
+            if (currentView === 'calendar') {
+                renderCalendarView();
+            } else {
+                renderListView();
+            }
+        }
+
+        // Render calendar view
+        function renderCalendarView() {
+            const container = document.getElementById('training-plan-container');
+            let html = '';
+            let dayCounter = 1;
+            
+            trainingPlan.weeks.forEach(week => {
+                html += `
+                    <div class="mb-8">
+                        <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg p-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-xl font-bold">Week ${week.week_num}: ${week.dates}</h3>
+                                    <p class="text-sm opacity-90">${week.phase}</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold">${week.total_miles} miles</div>
+                                    <div class="text-sm opacity-90">${week.num_runs} runs</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-7 gap-2 p-4 bg-gray-50 rounded-b-lg">
+                `;
+                
+                week.workouts.forEach((workout, idx) => {
+                    const key = `w${week.week_num}_d${idx}`;
+                    const workoutData = completedWorkouts[key] || {};
+                    const isCompleted = workoutData.completed;
+                    const isModified = workoutData.is_modified;
+                    
+                    // Use modified workout if it exists, otherwise use original
+                    const currentWorkout = isModified ? workoutData.modified_workout : workout.workout;
+                    const currentMiles = isModified ? workoutData.modified_miles : workout.miles;
+                    const isRest = currentMiles === 0;
+                    
+                    // Determine workout type for coloring
+                    const workoutLower = currentWorkout.toLowerCase();
+                    const isQuality = workoutLower.includes('tempo') || workoutLower.includes('interval') || 
+                                     workoutLower.includes('sharpener') || workoutLower.includes('tune-up');
+                    const isLong = currentMiles >= 8;
+                    const isEasy = workoutLower.includes('easy') && !isLong;
+                    
+                    // Set background color based on workout type
+                    let bgColor = 'bg-white';
+                    if (isCompleted) {
+                        bgColor = 'bg-green-100';
+                    } else if (isRest) {
+                        bgColor = 'bg-yellow-100';
+                    } else if (isQuality) {
+                        bgColor = 'bg-pink-100';
+                    } else if (isLong) {
+                        bgColor = 'bg-blue-100';
+                    } else if (isEasy) {
+                        bgColor = 'bg-green-50';
+                    }
+                    
+                    let dayClass = `calendar-day ${bgColor}`;
+                    // Add orange left border for modified workouts
+                    let borderStyle = isModified ? 'border-l-4 border-l-orange-500' : '';
+                    
+                    // Add goal pace for Easy and Long runs (if not modified and not completed)
+                    let paceInfo = '';
+                    if (isEasy && !isCompleted && !isModified) {
+                        paceInfo = '<div class="text-xs text-gray-600 mt-1">@ 9:45-10:30</div>';
+                    } else if (isLong && !isCompleted && !isModified && !workoutLower.includes('@')) {
+                        paceInfo = '<div class="text-xs text-gray-600 mt-1">@ 9:30-10:00</div>';
+                    }
+                    
+                    html += `
+                        <div class="${dayClass} ${borderStyle} rounded-lg p-3 relative">
+                            ${isModified ? '<div class="absolute top-1 right-1 text-orange-500 text-lg">✏️</div>' : ''}
+                            <div class="font-bold text-sm text-gray-700 mb-1">${workout.day} (${dayCounter})</div>
+                            <div class="text-xs text-gray-600 mb-2">${workout.day_type}</div>
+                            ${isModified ? '<div class="text-xs font-bold text-orange-600 mb-1">MODIFIED</div>' : ''}
+                            <div class="text-sm font-semibold ${isRest ? 'text-amber-700' : 'text-gray-900'}">
+                                ${isCompleted ? '✅ ' : ''}${currentWorkout}
+                            </div>
+                            ${currentMiles > 0 ? `<div class="text-xs text-indigo-600 font-bold mt-2">${currentMiles} mi</div>` : ''}
+                            ${paceInfo}
+                            ${isCompleted && workoutData.actual_miles ? `
+                                <div class="text-xs text-green-700 mt-2 font-semibold">
+                                    ✓ ${workoutData.actual_miles} mi logged
+                                </div>
+                            ` : ''}
+                            <div class="mt-3 flex gap-2">
+                                ${!isRest || isModified ? `<button onclick="openModal(${week.week_num}, ${idx}, '${workout.day} (${dayCounter})', '${currentWorkout.replace(/'/g, "\\'")}');" class="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Log</button>` : ''}
+                                <button onclick="openEditModal(${week.week_num}, ${idx}, '${workout.day} (${dayCounter})', ${JSON.stringify(workout).replace(/"/g, '&quot;')});" class="text-xs px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600">Edit</button>
+                            </div>
+                        </div>
+                    `;
+                    dayCounter++;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Render list view
+        function renderListView() {
+            const container = document.getElementById('training-plan-container');
+            let dayCounter = 1;
+            let html = `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Workout</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Planned Miles</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+            `;
+            
+            trainingPlan.weeks.forEach(week => {
+                week.workouts.forEach((workout, idx) => {
+                    const key = `w${week.week_num}_d${idx}`;
+                    const workoutData = completedWorkouts[key] || {};
+                    const isCompleted = workoutData.completed;
+                    const isModified = workoutData.is_modified;
+                    
+                    // Use modified workout if exists
+                    const currentWorkout = isModified ? workoutData.modified_workout : workout.workout;
+                    const currentMiles = isModified ? workoutData.modified_miles : workout.miles;
+                    const isRest = currentMiles === 0;
+                    
+                    // Determine row background color
+                    const workoutLower = currentWorkout.toLowerCase();
+                    const isQuality = workoutLower.includes('tempo') || workoutLower.includes('interval') || 
+                                     workoutLower.includes('sharpener') || workoutLower.includes('tune-up');
+                    const isLong = currentMiles >= 8;
+                    const isEasy = workoutLower.includes('easy') && !isLong;
+                    
+                    let rowBg = '';
+                    if (isCompleted) {
+                        rowBg = 'bg-green-50';
+                    } else if (isRest) {
+                        rowBg = 'bg-yellow-50';
+                    } else if (isQuality) {
+                        rowBg = 'bg-pink-50';
+                    } else if (isLong) {
+                        rowBg = 'bg-blue-50';
+                    } else if (isEasy) {
+                        rowBg = 'bg-green-25';
+                    }
+                    
+                    // Add orange border for modified
+                    let borderStyle = isModified ? 'border-l-4 border-l-orange-500' : '';
+                    
+                    html += `
+                        <tr class="hover:bg-gray-50 ${rowBg} ${borderStyle}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-700">${isModified ? '✏️ ' : ''}${dayCounter}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${workout.day}</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">
+                                ${isModified ? '<span class="text-orange-600 font-semibold text-xs">MODIFIED:</span><br>' : ''}
+                                ${currentWorkout}
+                                ${isModified ? `<br><span class="text-xs text-gray-500">Original: ${workout.workout}</span>` : ''}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${currentMiles || '-'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                ${isCompleted ? '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✅ Completed</span>' :
+                                  isModified ? '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">✏️ Modified</span>' :
+                                  isRest ? '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Rest</span>' :
+                                  '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Planned</span>'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm flex gap-2">
+                                ${!isRest || isModified ? `<button onclick="openModal(${week.week_num}, ${idx}, '${workout.day} (${dayCounter})', '${currentWorkout.replace(/'/g, "\\'")}') " class="text-blue-600 hover:text-blue-900 font-semibold">Log</button>` : ''}
+                                <button onclick="openEditModal(${week.week_num}, ${idx}, '${workout.day} (${dayCounter})', ${JSON.stringify(workout).replace(/"/g, '&quot;')})" class="text-gray-600 hover:text-gray-900 font-semibold">Edit</button>
+                            </td>
+                        </tr>
+                    `;
+                    dayCounter++;
+                });
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // Open workout modal
+        function openModal(week, day, dayStr, workout) {
+            currentWorkoutDate = {week, day};
+            document.getElementById('modal-workout-info').innerHTML = `
+                <p class="text-lg font-semibold text-gray-800">${dayStr}</p>
+                <p class="text-gray-600 mt-1">${workout}</p>
+            `;
+            
+            // Load existing data if any
+            const key = `w${week}_d${day}`;
+            if (completedWorkouts[key]) {
+                document.getElementById('actual-distance').value = completedWorkouts[key].actual_miles || '';
+                document.getElementById('workout-notes').value = completedWorkouts[key].notes || '';
+            } else {
+                document.getElementById('actual-distance').value = '';
+                document.getElementById('duration').value = '';
+                document.getElementById('effort').value = 5;
+                document.getElementById('effort-value').textContent = 5;
+                document.getElementById('workout-notes').value = '';
+            }
+            
+            document.getElementById('workout-modal').classList.remove('hidden');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('workout-modal').classList.add('hidden');
+            currentWorkoutDate = null;
+        }
+
+        // Save workout
+        async function saveWorkout() {
+            if (!currentWorkoutDate) return;
+            
+            const actualMiles = document.getElementById('actual-distance').value;
+            const duration = document.getElementById('duration').value;
+            const effort = document.getElementById('effort').value;
+            const notes = document.getElementById('workout-notes').value;
+            
+            const actualPace = actualMiles && duration ? (duration / actualMiles).toFixed(2) + ' min/mi' : '';
+            
+            try {
+                const response = await fetch('/api/log_workout', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        week: currentWorkoutDate.week,
+                        day: currentWorkoutDate.day,
+                        completed: true,
+                        actual_miles: actualMiles,
+                        actual_pace: actualPace,
+                        notes: notes,
+                        effort: effort,
+                        duration: duration
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update local data
+                    const key = `w${currentWorkoutDate.week}_d${currentWorkoutDate.day}`;
+                    completedWorkouts[key] = result.data;
+                    
+                    // Refresh view and stats
+                    renderView();
+                    updateStatsFromAPI();
+                    closeModal();
+                } else {
+                    alert('Error saving workout: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving workout:', error);
+                alert('Error saving workout. Please try again.');
+            }
+        }
+
+        // Update stats from API
+        async function updateStatsFromAPI() {
+            try {
+                const response = await fetch('/api/get_stats');
+                const stats = await response.json();
+                updateStats(stats);
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
+        // Update stats display
+        function updateStats(stats) {
+            document.getElementById('stat-workouts').textContent = `${stats.completed_workouts} / ${stats.total_workouts}`;
+            document.getElementById('stat-miles').textContent = stats.completed_miles;
+            updateWeeklyChart();
+        }
+
+        // Chart.js instance
+        let weeklyChart = null;
+
+        // Create/Update Weekly Mileage Chart
+        function updateWeeklyChart() {
+            const ctx = document.getElementById('weeklyMileageChart');
+            if (!ctx) return;
+
+            // Calculate actual miles per week from completed workouts
+            const weeklyActual = Array(13).fill(0);
+            Object.keys(completedWorkouts).forEach(key => {
+                const workout = completedWorkouts[key];
+                if (workout.completed && workout.actual_miles) {
+                    const weekNum = parseInt(key.split('_')[0].substring(1)) - 1;
+                    weeklyActual[weekNum] += parseFloat(workout.actual_miles);
+                }
+            });
+
+            // Get planned miles per week from training plan
+            const weeklyPlanned = trainingPlan.weeks.map(week => week.total_miles);
+            const weekLabels = Array.from({length: 13}, (_, i) => (i + 1).toString());
+
+            // Destroy existing chart if it exists
+            if (weeklyChart) {
+                weeklyChart.destroy();
+            }
+
+            // Create new chart
+            weeklyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: weekLabels,
+                    datasets: [
+                        {
+                            label: 'Planned',
+                            data: weeklyPlanned,
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)', // Blue
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Actual',
+                            data: weeklyActual,
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)', // Red
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                boxWidth: 15,
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        title: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + ' miles';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Week',
+                                font: {
+                                    size: 14
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 50,
+                            ticks: {
+                                stepSize: 10
+                            },
+                            title: {
+                                display: false
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', initializePlan);
+        
+        // Edit workout functionality
+        let currentEditWorkout = null;
+
+        // Open edit modal
+        function openEditModal(week, day, dayStr, workout) {
+            currentEditWorkout = {week, day, workout};
+            
+            const key = `w${week}_d${day}`;
+            const workoutData = completedWorkouts[key] || {};
+            
+            // Display day info
+            document.getElementById('edit-workout-info').innerHTML = `
+                <p class="text-lg font-semibold text-gray-800">${dayStr}</p>
+                <p class="text-sm text-gray-600 mt-1">${workout.day_type}</p>
+            `;
+            
+            // Display original workout
+            document.getElementById('original-workout-display').innerHTML = `
+                <div class="font-semibold">${workout.workout}</div>
+                <div class="text-sm text-gray-600 mt-1">Distance: ${workout.miles} miles</div>
+            `;
+            
+            // Pre-fill with modified values if exists, otherwise original
+            if (workoutData.is_modified) {
+                document.getElementById('modified-workout').value = workoutData.modified_workout || '';
+                document.getElementById('modified-miles').value = workoutData.modified_miles || '';
+                document.getElementById('modified-type').value = workoutData.modified_type || 'easy';
+                document.getElementById('modification-reason').value = workoutData.modification_reason || '';
+            } else {
+                document.getElementById('modified-workout').value = workout.workout;
+                document.getElementById('modified-miles').value = workout.miles;
+                // Auto-detect type
+                const workoutLower = workout.workout.toLowerCase();
+                let detectedType = 'easy';
+                if (workout.miles === 0) detectedType = 'rest';
+                else if (workout.miles >= 8) detectedType = 'long';
+                else if (workoutLower.includes('tempo') || workoutLower.includes('interval')) detectedType = 'quality';
+                else if (workoutLower.includes('recovery')) detectedType = 'recovery';
+                document.getElementById('modified-type').value = detectedType;
+                document.getElementById('modification-reason').value = '';
+            }
+            
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        // Close edit modal
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+            currentEditWorkout = null;
+        }
+
+        // Save workout edit
+        async function saveWorkoutEdit() {
+            if (!currentEditWorkout) return;
+            
+            const modifiedWorkout = document.getElementById('modified-workout').value.trim();
+            const modifiedMiles = parseFloat(document.getElementById('modified-miles').value) || 0;
+            const modifiedType = document.getElementById('modified-type').value;
+            const modificationReason = document.getElementById('modification-reason').value.trim();
+            
+            if (!modifiedWorkout) {
+                alert('Please enter a workout description');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/edit_workout', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        week: currentEditWorkout.week,
+                        day: currentEditWorkout.day,
+                        original_workout: currentEditWorkout.workout.workout,
+                        original_miles: currentEditWorkout.workout.miles,
+                        modified_workout: modifiedWorkout,
+                        modified_miles: modifiedMiles,
+                        modified_type: modifiedType,
+                        modification_reason: modificationReason
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update local data
+                    const key = `w${currentEditWorkout.week}_d${currentEditWorkout.day}`;
+                    completedWorkouts[key] = result.data;
+                    
+                    // Refresh view
+                    renderView();
+                    updateStatsFromAPI();
+                    closeEditModal();
+                } else {
+                    alert('Error saving modification: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving edit:', error);
+                alert('Error saving modification. Please try again.');
+            }
+        }
+
+        // Revert to original workout
+        async function revertToOriginal() {
+            if (!currentEditWorkout) return;
+            
+            if (!confirm('Revert to original workout plan?')) return;
+            
+            try {
+                const response = await fetch('/api/revert_workout', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        week: currentEditWorkout.week,
+                        day: currentEditWorkout.day
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update local data
+                    const key = `w${currentEditWorkout.week}_d${currentEditWorkout.day}`;
+                    completedWorkouts[key] = result.data;
+                    
+                    // Refresh view
+                    renderView();
+                    updateStatsFromAPI();
+                    closeEditModal();
+                } else {
+                    alert('Error reverting: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error reverting:', error);
+                alert('Error reverting. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>
