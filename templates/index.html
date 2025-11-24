@@ -273,8 +273,8 @@
                 updateStats(stats);
                 
                 // Load plan data from backend
-                trainingPlan = {{ plan | tojson }};
-                completedWorkouts = {{ workout_data | tojson }};
+                trainingPlan = {{ plan | tojson | safe }};
+                completedWorkouts = {{ workout_data | tojson | safe }};
                 
                 renderView();
             } catch (error) {
