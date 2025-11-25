@@ -424,6 +424,11 @@ def get_stats():
         'completed_miles': round(completed_miles, 1)
     })
 
+@app.route('/api/get_plan')
+def get_plan():
+    """Get the full training plan"""
+    return jsonify(TRAINING_PLAN)
+
 if __name__ == '__main__':
     # For Google Cloud Run
     port = int(os.environ.get('PORT', 8080))
