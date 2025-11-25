@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -268,12 +269,16 @@
         // Initialize the training plan
         async function initializePlan() {
             try {
-                const response = await fetch('/api/get_stats');
-                const stats = await response.json();
+                // Fetch training plan from API
+                const planResponse = await fetch('/api/get_plan');
+                trainingPlan = await planResponse.json();
+                
+                // Fetch stats
+                const statsResponse = await fetch('/api/get_stats');
+                const stats = await statsResponse.json();
                 updateStats(stats);
                 
-                // Load plan data from backend
-                trainingPlan = {{ plan | tojson | safe }};
+                // Load completed workouts data
                 completedWorkouts = {{ workout_data | tojson | safe }};
                 
                 renderView();
