@@ -135,9 +135,14 @@
                     📋 List View
                 </button>
             </div>
-            <button onclick="initializePlan()" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold shadow-lg hover:bg-green-700 transition">
-                ⚡ Initialize Training Plan
-            </button>
+            <div class="flex space-x-4">
+                <button onclick="resetPlan()" class="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold shadow-lg hover:bg-red-700 transition">
+                    🔄 Reset Plan (QA)
+                </button>
+                <button onclick="initializePlan()" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold shadow-lg hover:bg-green-700 transition">
+                    🔃 Refresh View
+                </button>
+            </div>
         </div>
 
         <!-- Training Plan Container -->
@@ -285,6 +290,43 @@
             } catch (error) {
                 console.error('Error initializing plan:', error);
                 alert('Error loading training plan. Please try again.');
+            }
+        }
+
+        // Reset all workout data (QA/testing)
+        async function resetPlan() {
+            if (!confirm('⚠️ WARNING: This will delete ALL logged workouts!\n\nAre you sure you want to reset the entire plan?')) {
+                return;
+            }
+            
+            // Double confirmation
+            if (!confirm('This action cannot be undone. Really reset everything?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/reset_plan', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ ${result.message}`);
+                    
+                    // Clear local data
+                    completedWorkouts = {};
+                    
+                    // Refresh the view
+                    renderView();
+                    updateStatsFromAPI();
+                } else {
+                    alert('❌ Error resetting plan: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error resetting plan:', error);
+                alert('❌ Error resetting plan. Please try again.');
             }
         }
 
