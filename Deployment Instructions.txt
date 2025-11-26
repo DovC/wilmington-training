@@ -1,18 +1,17 @@
-#Copy and paste these commands one at a time:
-bashcd ~
-Press Enter
-bashrm -rf wilmington-training
-Press Enter
-bashgit clone https://github.com/DovC/wilmington-training.git
-Press Enter - should say "Cloning into 'wilmington-training'..."
-bashcd wilmington-training
-Press Enter
-bashgcloud builds submit --tag gcr.io/wilmington-half-marathon/wilmington-training
-Press Enter - This takes 2-3 minutes, wait for "SUCCESS"
-bashgcloud run deploy wilmington-training \
+# In Cloud Shell (https://console.cloud.google.com):
+
+cd ~
+rm -rf wilmington-training  # Clean start
+git clone https://github.com/DovC/wilmington-training.git
+cd wilmington-training
+
+# Manual image build (most reliable for your setup)
+gcloud builds submit --tag gcr.io/wilmington-half-marathon/wilmington-training
+
+# Deploy pre-built image
+gcloud run deploy wilmington-training \
   --image gcr.io/wilmington-half-marathon/wilmington-training \
   --platform managed \
   --region us-east1 \
   --allow-unauthenticated \
   --project wilmington-half-marathon
-Press Enter - This takes 1-2 minutes, wait for "Service URL: https://..."
