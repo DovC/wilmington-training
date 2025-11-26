@@ -429,6 +429,12 @@ def get_plan():
     """Get the full training plan"""
     return jsonify(TRAINING_PLAN)
 
+@app.route('/api/get_workouts')
+def get_workouts():
+    """Get all workout data from Firestore"""
+    workout_data = load_workout_data()
+    return jsonify(workout_data)
+
 @app.route('/api/reset_plan', methods=['POST'])
 def reset_plan():
     """Reset all workout data (for QA/testing)"""
