@@ -270,6 +270,7 @@
         let completedWorkouts = {};
         let currentView = 'calendar';
         let currentWorkoutDate = null;
+        let currentStats = null;  // Store stats globally for chart access
 
         // Initialize the training plan
         async function initializePlan() {
@@ -282,10 +283,10 @@
                 const workoutsResponse = await fetch('/api/get_workouts');
                 completedWorkouts = await workoutsResponse.json();
                 
-                // Fetch current stats from backend
+                // Fetch current stats from backend and store globally
                 const statsResponse = await fetch('/api/get_stats');
-                const stats = await statsResponse.json();
-                updateStats(stats);
+                currentStats = await statsResponse.json();
+                updateStats(currentStats);
                 
                 renderView();
             } catch (error) {
@@ -630,8 +631,8 @@
         async function updateStatsFromAPI() {
             try {
                 const response = await fetch('/api/get_stats');
-                const stats = await response.json();
-                updateStats(stats);
+                currentStats = await response.json();
+                updateStats(currentStats);
             } catch (error) {
                 console.error('Error updating stats:', error);
             }
@@ -652,15 +653,8 @@
             const ctx = document.getElementById('weeklyMileageChart');
             if (!ctx) return;
 
-            // Calculate actual miles per week from completed workouts
-            const weeklyActual = Array(13).fill(0);
-            Object.keys(completedWorkouts).forEach(key => {
-                const workout = completedWorkouts[key];
-                if (workout.completed && workout.actual_miles) {
-                    const weekNum = parseInt(key.split('_')[0].substring(1)) - 1;
-                    weeklyActual[weekNum] += parseFloat(workout.actual_miles);
-                }
-            });
+            // Use weekly breakdown from API (single source of truth)
+            const weeklyActual = currentStats ? currentStats.weekly_actual_miles : Array(13).fill(0);
 
             // Get planned miles per week from training plan
             const weeklyPlanned = trainingPlan.weeks.map(week => week.total_miles);
