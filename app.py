@@ -429,6 +429,38 @@ def get_plan():
     """Get the full training plan"""
     return jsonify(TRAINING_PLAN)
 
+@app.route('/api/reset_plan', methods=['POST'])
+def reset_plan():
+    """Reset all workout data (for QA/testing)"""
+    try:
+        if USE_FIRESTORE:
+            # Delete all documents in workouts collection
+            workouts_ref = db.collection('workouts')
+            docs = workouts_ref.stream()
+            deleted_count = 0
+            for doc in docs:
+                doc.reference.delete()
+                deleted_count += 1
+            return jsonify({
+                'success': True,
+                'message': f'Reset complete! Deleted {deleted_count} logged workouts.',
+                'deleted_count': deleted_count
+            })
+        else:
+            # Clear local storage
+            global LOCAL_DATA
+            LOCAL_DATA = {}
+            return jsonify({
+                'success': True,
+                'message': 'Reset complete! All data cleared.',
+                'deleted_count': 0
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # For Google Cloud Run
     port = int(os.environ.get('PORT', 8080))
