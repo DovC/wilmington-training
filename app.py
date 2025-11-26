@@ -283,8 +283,8 @@ def save_workout_data(key, data):
 @app.route('/')
 def index():
     """Main page showing the full training plan"""
-    workout_data = load_workout_data()
-    return render_template('index.html', plan=TRAINING_PLAN, workout_data=workout_data)
+    # All data now fetched via API endpoints - no template variables needed
+    return render_template('index.html')
 
 @app.route('/api/log_workout', methods=['POST'])
 def log_workout():
@@ -406,6 +406,7 @@ def get_stats():
     
     total_planned_miles = sum(week['total_miles'] for week in TRAINING_PLAN['weeks'])
     
+    # Calculate total completed miles
     completed_miles = 0
     for key, value in workout_data.items():
         if value.get('completed', False):
@@ -416,12 +417,28 @@ def get_stats():
                 except:
                     pass
     
+    # Calculate weekly breakdown for chart
+    weekly_actual_miles = [0] * 13
+    for key, value in workout_data.items():
+        if value.get('completed', False) and value.get('actual_miles'):
+            try:
+                # Parse key format: w1_d1 -> week 1
+                week_num = int(key.split('_')[0][1:]) - 1  # w1 -> 0, w2 -> 1, etc.
+                if 0 <= week_num < 13:
+                    weekly_actual_miles[week_num] += float(value['actual_miles'])
+            except (ValueError, IndexError):
+                pass
+    
+    # Round weekly miles to 1 decimal place
+    weekly_actual_miles = [round(miles, 1) for miles in weekly_actual_miles]
+    
     return jsonify({
         'total_workouts': total_workouts,
         'completed_workouts': completed_workouts,
         'completion_percentage': round((completed_workouts / total_workouts * 100), 1) if total_workouts > 0 else 0,
         'total_planned_miles': total_planned_miles,
-        'completed_miles': round(completed_miles, 1)
+        'completed_miles': round(completed_miles, 1),
+        'weekly_actual_miles': weekly_actual_miles  # NEW: Weekly breakdown for chart
     })
 
 @app.route('/api/get_plan')
