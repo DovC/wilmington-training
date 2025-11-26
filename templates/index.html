@@ -274,17 +274,18 @@
         // Initialize the training plan
         async function initializePlan() {
             try {
-                // Fetch training plan from API
+                // Fetch training plan structure from API
                 const planResponse = await fetch('/api/get_plan');
                 trainingPlan = await planResponse.json();
                 
-                // Fetch stats
+                // Fetch CURRENT workout data from Firestore (real-time)
+                const workoutsResponse = await fetch('/api/get_workouts');
+                completedWorkouts = await workoutsResponse.json();
+                
+                // Fetch current stats from backend
                 const statsResponse = await fetch('/api/get_stats');
                 const stats = await statsResponse.json();
                 updateStats(stats);
-                
-                // Load completed workouts data
-                completedWorkouts = {{ workout_data | tojson | safe }};
                 
                 renderView();
             } catch (error) {
