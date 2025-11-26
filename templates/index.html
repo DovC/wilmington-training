@@ -313,9 +313,11 @@
                     // Clear local data
                     completedWorkouts = {};
                     
-                    // Refresh the view
+                    // Update stats FIRST
+                    await updateStatsFromAPI();
+                    
+                    // THEN refresh the view
                     renderView();
-                    updateStatsFromAPI();
                 } else {
                     alert('❌ Error resetting plan: ' + (result.error || 'Unknown error'));
                 }
@@ -635,9 +637,11 @@
                     const key = `w${currentWorkoutDate.week}_d${currentWorkoutDate.day}`;
                     completedWorkouts[key] = result.data;
                     
-                    // Refresh view and stats
+                    // Update stats FIRST (so weekly totals are correct)
+                    await updateStatsFromAPI();
+                    
+                    // THEN refresh view with updated stats
                     renderView();
-                    updateStatsFromAPI();
                     closeModal();
                 } else {
                     alert('Error saving workout: ' + (result.error || 'Unknown error'));
@@ -857,9 +861,11 @@
                     const key = `w${currentEditWorkout.week}_d${currentEditWorkout.day}`;
                     completedWorkouts[key] = result.data;
                     
-                    // Refresh view
+                    // Update stats FIRST
+                    await updateStatsFromAPI();
+                    
+                    // THEN refresh view
                     renderView();
-                    updateStatsFromAPI();
                     closeEditModal();
                 } else {
                     alert('Error saving modification: ' + (result.error || 'Unknown error'));
@@ -893,9 +899,11 @@
                     const key = `w${currentEditWorkout.week}_d${currentEditWorkout.day}`;
                     completedWorkouts[key] = result.data;
                     
-                    // Refresh view
+                    // Update stats FIRST
+                    await updateStatsFromAPI();
+                    
+                    // THEN refresh view
                     renderView();
-                    updateStatsFromAPI();
                     closeEditModal();
                 } else {
                     alert('Error reverting: ' + (result.error || 'Unknown error'));
