@@ -473,16 +473,32 @@
                                     ` : ''}
                                 ` : ''}
                             </div>
-                             <div class="mt-2 flex gap-2">
-                                ${!isRest || isModified ? `<button onclick="openModal(${week.week_num}, ${idx}, '${workout.day}', '${currentWorkout.replace(/'/g, "\\'")}');" class="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Log</button>` : ''}
-                                ${!isRest ? `<button onclick="importFromStrava('${workout.day}', ${week.week_num}, ${idx});" class="text-xs px-2 py-1 bg-orange-500 text-white rounded hover:bg-orange-600" title="Import from Strava">
-                                    <svg class="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                                    </svg>
-                                    Strava
-                                </button>` : ''}
-                                <button onclick="openEditModal(${week.week_num}, ${idx}, '${workout.day}', ${JSON.stringify(workout).replace(/"/g, '&quot;')});" class="text-xs px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600">Edit</button>
-                             </div>
+                             <div class="mt-2 space-y-1">
+    ${(!isRest || isModified) || !isRest ? `
+        <div class="flex gap-1">
+            ${!isRest || isModified ? `
+                <button onclick="openModal(${week.week_num}, ${idx}, '${workout.day}', '${currentWorkout.replace(/'/g, "\\'")}');" 
+                    class="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex-1">
+                    Log
+                </button>
+            ` : ''}
+            ${!isRest ? `
+                <button onclick="importFromStrava('${workout.day}', ${week.week_num}, ${idx});" 
+                    class="text-xs px-2 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 flex-1 flex items-center justify-center gap-1" 
+                    title="Import from Strava">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                    </svg>
+                    Strava
+                </button>
+            ` : ''}
+        </div>
+    ` : ''}
+    <button onclick="openEditModal(${week.week_num}, ${idx}, '${workout.day}', ${JSON.stringify(workout).replace(/"/g, '&quot;')});" 
+        class="text-xs px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 w-full">
+        Edit
+    </button>
+</div>
                         </div>
                     `;
                     dayCounter++;
