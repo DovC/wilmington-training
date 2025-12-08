@@ -3,10 +3,23 @@ from flask_cors import CORS
 from datetime import datetime, date
 import json
 import os
+from dotenv import load_dotenv
+import requests
+from urllib.parse import urlencode
+
+# Load environment variables
+load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
+
+STRAVA_CLIENT_ID = os.getenv('STRAVA_CLIENT_ID', '')
+STRAVA_CLIENT_SECRET = os.getenv('STRAVA_CLIENT_SECRET', '')
+STRAVA_REDIRECT_URI = os.getenv('STRAVA_REDIRECT_URI', 'http://localhost:8080/api/strava/callback')
+STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize'
+STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token'
+STRAVA_API_BASE = 'https://www.strava.com/api/v3'
 
 # Try to import Firestore, fallback to local storage if not available
 try:
@@ -483,6 +496,221 @@ def reset_plan():
             'success': False,
             'error': str(e)
         }), 500
+
+# ============================================================================
+# STRAVA INTEGRATION ENDPOINTS
+# ============================================================================
+
+def get_valid_strava_token():
+    """Get valid Strava access token, refresh if needed"""
+    try:
+        if not USE_FIRESTORE:
+            return None
+            
+        token_doc = db.collection('strava_tokens').document('user_token').get()
+        
+        if not token_doc.exists:
+            return None
+        
+        token_data = token_doc.to_dict()
+        
+        # Check if token is expired (expires_at is Unix timestamp)
+        if datetime.now().timestamp() >= token_data.get('expires_at', 0):
+            # Token expired, refresh it
+            print("Strava token expired, refreshing...")
+            refresh_data = {
+                'client_id': STRAVA_CLIENT_ID,
+                'client_secret': STRAVA_CLIENT_SECRET,
+                'grant_type': 'refresh_token',
+                'refresh_token': token_data['refresh_token']
+            }
+            
+            response = requests.post(STRAVA_TOKEN_URL, data=refresh_data)
+            response.raise_for_status()
+            new_tokens = response.json()
+            
+            # Update stored tokens
+            db.collection('strava_tokens').document('user_token').update({
+                'access_token': new_tokens['access_token'],
+                'refresh_token': new_tokens['refresh_token'],
+                'expires_at': new_tokens['expires_at'],
+                'updated_at': datetime.now().isoformat()
+            })
+            
+            print("Strava token refreshed successfully")
+            return new_tokens['access_token']
+        
+        return token_data['access_token']
+    
+    except Exception as e:
+        print(f"Error getting Strava token: {e}")
+        return None
+
+@app.route('/api/strava/authorize')
+def strava_authorize():
+    """Redirect user to Strava authorization page"""
+    if not STRAVA_CLIENT_ID:
+        return jsonify({'error': 'Strava not configured. Please set STRAVA_CLIENT_ID in environment.'}), 500
+    
+    params = {
+        'client_id': STRAVA_CLIENT_ID,
+        'redirect_uri': STRAVA_REDIRECT_URI,
+        'response_type': 'code',
+        'scope': 'activity:read_all',
+        'approval_prompt': 'auto'
+    }
+    auth_url = f"{STRAVA_AUTH_URL}?{urlencode(params)}"
+    return jsonify({'auth_url': auth_url})
+
+@app.route('/api/strava/callback')
+def strava_callback():
+    """Handle OAuth callback from Strava"""
+    code = request.args.get('code')
+    
+    if not code:
+        return '<html><body><h2>❌ Authorization failed</h2><p>No authorization code received.</p><button onclick="window.close()">Close</button></body></html>'
+    
+    try:
+        # Exchange code for access token
+        token_data = {
+            'client_id': STRAVA_CLIENT_ID,
+            'client_secret': STRAVA_CLIENT_SECRET,
+            'code': code,
+            'grant_type': 'authorization_code'
+        }
+        
+        response = requests.post(STRAVA_TOKEN_URL, data=token_data)
+        response.raise_for_status()
+        tokens = response.json()
+        
+        # Store tokens in Firestore
+        if USE_FIRESTORE:
+            db.collection('strava_tokens').document('user_token').set({
+                'access_token': tokens['access_token'],
+                'refresh_token': tokens['refresh_token'],
+                'expires_at': tokens['expires_at'],
+                'athlete_id': tokens['athlete']['id'],
+                'athlete_name': f"{tokens['athlete']['firstname']} {tokens['athlete']['lastname']}",
+                'updated_at': datetime.now().isoformat()
+            })
+        
+        # Success page that closes popup
+        return '''
+        <html>
+        <head><title>Strava Authorization</title></head>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h2>✅ Strava Connected Successfully!</h2>
+            <p>You can close this window now.</p>
+            <script>
+                window.opener.postMessage({type: 'strava_auth_success'}, '*');
+                setTimeout(() => window.close(), 2000);
+            </script>
+        </body>
+        </html>
+        '''
+    
+    except Exception as e:
+        print(f"Error exchanging code for token: {e}")
+        return f'<html><body><h2>❌ Authorization Error</h2><p>{str(e)}</p><button onclick="window.close()">Close</button></body></html>'
+
+@app.route('/api/strava/check_auth')
+def strava_check_auth():
+    """Check if user has authorized Strava"""
+    try:
+        if not USE_FIRESTORE:
+            return jsonify({'authorized': False, 'message': 'Firestore not available'})
+        
+        token_doc = db.collection('strava_tokens').document('user_token').get()
+        if token_doc.exists:
+            token_data = token_doc.to_dict()
+            return jsonify({
+                'authorized': True,
+                'athlete_name': token_data.get('athlete_name', 'Unknown')
+            })
+        return jsonify({'authorized': False})
+    except Exception as e:
+        print(f"Error checking Strava auth: {e}")
+        return jsonify({'authorized': False, 'error': str(e)})
+
+@app.route('/api/strava/activities/<date>')
+def get_strava_activities(date):
+    """Get Strava activities for a specific date (YYYY-MM-DD)"""
+    token = get_valid_strava_token()
+    
+    if not token:
+        return jsonify({'error': 'Not authorized with Strava. Please connect your Strava account first.'}), 401
+    
+    try:
+        # Parse date
+        target_date = datetime.strptime(date, '%Y-%m-%d')
+        
+        # Get start and end of day (Unix timestamps)
+        start_of_day = target_date.replace(hour=0, minute=0, second=0)
+        end_of_day = target_date.replace(hour=23, minute=59, second=59)
+        
+        # Fetch activities from Strava
+        headers = {'Authorization': f'Bearer {token}'}
+        params = {
+            'after': int(start_of_day.timestamp()),
+            'before': int(end_of_day.timestamp()),
+            'per_page': 20
+        }
+        
+        response = requests.get(
+            f'{STRAVA_API_BASE}/athlete/activities',
+            headers=headers,
+            params=params
+        )
+        response.raise_for_status()
+        activities = response.json()
+        
+        # Filter to only runs
+        runs = [a for a in activities if a['type'] in ['Run', 'VirtualRun']]
+        
+        # Format for frontend
+        formatted_runs = []
+        for run in runs:
+            distance_miles = run['distance'] / 1609.34
+            moving_time_seconds = run['moving_time']
+            
+            # Calculate pace
+            if distance_miles > 0:
+                pace_minutes_per_mile = (moving_time_seconds / 60) / distance_miles
+                pace_min = int(pace_minutes_per_mile)
+                pace_sec = int((pace_minutes_per_mile - pace_min) * 60)
+                pace_str = f"{pace_min}:{pace_sec:02d} min/mi"
+            else:
+                pace_str = "N/A"
+            
+            # Format duration
+            hours = moving_time_seconds // 3600
+            minutes = (moving_time_seconds % 3600) // 60
+            seconds = moving_time_seconds % 60
+            if hours > 0:
+                duration_str = f"{hours}:{minutes:02d}:{seconds:02d}"
+            else:
+                duration_str = f"{minutes}:{seconds:02d}"
+            
+            formatted_runs.append({
+                'id': run['id'],
+                'name': run['name'],
+                'distance': round(distance_miles, 2),
+                'duration': duration_str,
+                'pace': pace_str,
+                'moving_time': moving_time_seconds,
+                'elapsed_time': run['elapsed_time'],
+                'total_elevation_gain': round(run['total_elevation_gain'] * 3.28084, 0),
+                'start_date': run['start_date'],
+                'average_heartrate': run.get('average_heartrate'),
+                'max_heartrate': run.get('max_heartrate')
+            })
+        
+        return jsonify({'runs': formatted_runs, 'count': len(formatted_runs)})
+    
+    except Exception as e:
+        print(f"Error fetching Strava activities: {e}")
+        return jsonify({'error': f'Failed to fetch activities: {str(e)}'}), 500
+
 
 if __name__ == '__main__':
     # For Google Cloud Run
