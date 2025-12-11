@@ -299,6 +299,7 @@ def index():
     # All data now fetched via API endpoints - no template variables needed
     return render_template('index.html')
 
+
 @app.route('/api/log_workout', methods=['POST'])
 def log_workout():
     """Log a workout as completed"""
@@ -309,16 +310,31 @@ def log_workout():
     notes = data.get('notes', '')
     actual_miles = data.get('actual_miles', '')
     actual_pace = data.get('actual_pace', '')
+    duration = data.get('duration', '')
+    strava_data = data.get('strava_data')
     
     key = f"w{week}_d{day}"
     
-    workout_info = {
+    # Load existing data to preserve edit information
+    existing_data = load_workout_data()
+    if key in existing_data:
+        workout_info = existing_data[key]
+    else:
+        workout_info = {}
+    
+    # Update with logging data (preserves existing edit data)
+    workout_info.update({
         'completed': completed,
         'notes': notes,
         'actual_miles': actual_miles,
         'actual_pace': actual_pace,
+        'duration': duration,
         'date_logged': datetime.now().isoformat()
-    }
+    })
+    
+    # Add Strava data if present
+    if strava_data:
+        workout_info['strava_data'] = strava_data
     
     success = save_workout_data(key, workout_info)
     
@@ -326,6 +342,7 @@ def log_workout():
         return jsonify({'success': True, 'data': workout_info})
     else:
         return jsonify({'success': False, 'error': 'Failed to save workout'}), 500
+
 
 @app.route('/api/edit_workout', methods=['POST'])
 def edit_workout():
