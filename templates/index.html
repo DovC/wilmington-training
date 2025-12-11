@@ -733,6 +733,10 @@
                 actualPace = `${paceMin}:${paceSec.toString().padStart(2, '0')} min/mi`;
             }
             
+// Determine if workout should be marked complete
+            // Only complete if there's actual distance logged
+            const isComplete = actualMiles && parseFloat(actualMiles) > 0;
+            
             try {
                 const response = await fetch('/api/log_workout', {
                     method: 'POST',
@@ -740,7 +744,7 @@
                     body: JSON.stringify({
                         week: currentWorkoutDate.week,
                         day: currentWorkoutDate.day,
-                        completed: true,
+                        completed: isComplete,  // Only true if distance logged
                         actual_miles: actualMiles,
                         actual_pace: actualPace,
                         notes: notes,
@@ -750,10 +754,16 @@
                 
                 const result = await response.json();
                 
-                if (result.success) {
-                    // Update local data
+if (result.success) {
                     const key = `w${currentWorkoutDate.week}_d${currentWorkoutDate.day}`;
-                    completedWorkouts[key] = result.data;
+                    
+                    // If workout was deleted (zeroed out), remove from local data
+                    if (result.deleted) {
+                        delete completedWorkouts[key];
+                    } else {
+                        // Update local data
+                        completedWorkouts[key] = result.data;
+                    }
                     
                     // Update stats FIRST (so weekly totals are correct)
                     await updateStatsFromAPI();

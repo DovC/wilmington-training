@@ -315,6 +315,34 @@ def log_workout():
     
     key = f"w{week}_d{day}"
     
+    # Check if this is effectively empty (no actual workout data)
+    is_empty = (
+        not actual_miles or 
+        actual_miles.strip() == '' or 
+        float(actual_miles) == 0
+    ) and not notes.strip()
+    
+    # If empty, delete the workout record instead of saving
+    if is_empty:
+        if USE_FIRESTORE:
+            try:
+                db.collection('workouts').document(key).delete()
+                return jsonify({'success': True, 'deleted': True, 'message': 'Workout data cleared'})
+            except Exception as e:
+                print(f"Error deleting workout: {e}")
+                return jsonify({'success': False, 'error': 'Failed to delete workout'}), 500
+        else:
+            all_data = load_workout_data()
+            if key in all_data:
+                del all_data[key]
+                try:
+                    with open(DATA_FILE, 'w') as f:
+                        json.dump(all_data, f, indent=2)
+                    return jsonify({'success': True, 'deleted': True, 'message': 'Workout data cleared'})
+                except Exception as e:
+                    print(f"Error deleting workout: {e}")
+                    return jsonify({'success': False, 'error': 'Failed to delete workout'}), 500
+    
     # Load existing data to preserve edit information
     existing_data = load_workout_data()
     if key in existing_data:
@@ -342,7 +370,6 @@ def log_workout():
         return jsonify({'success': True, 'data': workout_info})
     else:
         return jsonify({'success': False, 'error': 'Failed to save workout'}), 500
-
 
 @app.route('/api/edit_workout', methods=['POST'])
 def edit_workout():
