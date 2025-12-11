@@ -72,23 +72,23 @@ TRAINING_PLAN = {
         {
             "week_num": 3,
             "dates": "Dec 15-21",
-            "total_miles": 32,
-            "num_runs": 5,
+            "total_miles": 31,
+            "num_runs": 4,
             "phase": "BASE BUILDING",
             "workouts": [
                 {"day": "Mon 12/15", "workout": "REST", "day_type": "DAY 3", "miles": 0},
-                {"day": "Tue 12/16", "workout": "6 mi Easy", "day_type": "DAY 1", "miles": 6},
+                {"day": "Tue 12/16", "workout": "7 mi Easy", "day_type": "DAY 1", "miles": 7},
                 {"day": "Wed 12/17", "workout": "7 mi Intervals (2 mi WU + 6x800m @ 7:30-7:40 w/ 400m jog + 1 mi CD)", "day_type": "DAY 2", "miles": 7},
                 {"day": "Thu 12/18", "workout": "REST", "day_type": "DAY 3", "miles": 0},
-                {"day": "Fri 12/19", "workout": "6 mi Easy + 6 strides", "day_type": "DAY 1", "miles": 6},
-                {"day": "Sat 12/20", "workout": "8 mi Long Run", "day_type": "DAY 2", "miles": 8},
+                {"day": "Fri 12/19", "workout": "7 mi Easy + 6 strides", "day_type": "DAY 1", "miles": 7},
+                {"day": "Sat 12/20", "workout": "10 mi Long Run", "day_type": "DAY 2", "miles": 10},
                 {"day": "Sun 12/21", "workout": "REST", "day_type": "DAY 3", "miles": 0}
             ]
         },
         {
             "week_num": 4,
             "dates": "Dec 22-28",
-            "total_miles": 28,
+            "total_miles": 30,
             "num_runs": 5,
             "phase": "BASE BUILDING (RECOVERY)",
             "workouts": [
@@ -98,7 +98,7 @@ TRAINING_PLAN = {
                 {"day": "Thu 12/25", "workout": "6 mi Easy + 4 strides (Christmas)", "day_type": "DAY 1", "miles": 6},
                 {"day": "Fri 12/26", "workout": "3 mi Easy", "day_type": "DAY 2", "miles": 3},
                 {"day": "Sat 12/27", "workout": "REST", "day_type": "DAY 3", "miles": 0},
-                {"day": "Sun 12/28", "workout": "8 mi Long Run Easy", "day_type": "DAY 1", "miles": 8}
+                {"day": "Sun 12/28", "workout": "10 mi Long Run Easy", "day_type": "DAY 1", "miles": 10}
             ]
         },
         {
@@ -120,16 +120,16 @@ TRAINING_PLAN = {
         {
             "week_num": 6,
             "dates": "Jan 5-11",
-            "total_miles": 36,
-            "num_runs": 5,
+            "total_miles": 35,
+            "num_runs": 4,
             "phase": "EARLY QUALITY",
             "workouts": [
                 {"day": "Mon 1/5", "workout": "REST", "day_type": "DAY 3", "miles": 0},
-                {"day": "Tue 1/6", "workout": "6 mi Easy + 6 strides", "day_type": "DAY 1", "miles": 6},
-                {"day": "Wed 1/7", "workout": "7 mi Intervals (2 mi WU + 8x800m @ 7:30-7:40 w/ 400m jog + 1 mi CD)", "day_type": "DAY 2", "miles": 7},
+                {"day": "Tue 1/6", "workout": "7 mi Easy + 6 strides", "day_type": "DAY 1", "miles": 7},
+                {"day": "Wed 1/7", "workout": "8 mi Intervals (2 mi WU + 8x800m @ 7:30-7:40 w/ 400m jog + 2 mi CD)", "day_type": "DAY 2", "miles": 8},
                 {"day": "Thu 1/8", "workout": "REST", "day_type": "DAY 3", "miles": 0},
-                {"day": "Fri 1/9", "workout": "6 mi Easy", "day_type": "DAY 1", "miles": 6},
-                {"day": "Sat 1/10", "workout": "12 mi Long Run (10 mi easy + 2 mi @ 8:20-8:25)", "day_type": "DAY 2", "miles": 12},
+                {"day": "Fri 1/9", "workout": "7 mi Easy", "day_type": "DAY 1", "miles": 7},
+                {"day": "Sat 1/10", "workout": "13 mi Long Run (10 mi easy + 3 mi @ 8:20-8:25)", "day_type": "DAY 2", "miles": 13},
                 {"day": "Sun 1/11", "workout": "REST", "day_type": "DAY 3", "miles": 0}
             ]
         },
@@ -168,8 +168,8 @@ TRAINING_PLAN = {
         {
             "week_num": 9,
             "dates": "Jan 26-Feb 1",
-            "total_miles": 40,
-            "num_runs": 5,
+            "total_miles": 34,
+            "num_runs": 4,
             "phase": "PEAK PHASE",
             "workouts": [
                 {"day": "Mon 1/26", "workout": "REST", "day_type": "DAY 3", "miles": 0},
